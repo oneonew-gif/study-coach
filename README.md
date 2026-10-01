@@ -24,7 +24,7 @@
 不想看下面两节的话，打开终端粘贴这一行：
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/one11w2/study-coach/main/install.sh)
+bash <(curl -sL https://raw.githubusercontent.com/oneonew-gif/study-coach/main/install.sh)
 ```
 
 它会自动完成：下载引擎 → 放进 `~/.workbuddy/skills/study-coach/` → 跑环境预检 → 告诉你下一步对 AI 说什么。

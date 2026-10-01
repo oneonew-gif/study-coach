@@ -23,7 +23,7 @@
 
 set -u
 
-REPO="one11w2/study-coach"
+REPO="oneonew-gif/study-coach"
 REPO_ZIP="https://github.com/${REPO}/archive/refs/heads/main.zip"
 # 四路候选：codeload 直连 → API zipball（认 GITHUB_TOKEN）→ 两个镜像。
 # 已知现象：仓库刚推送后，GitHub 的匿名下载端点（codeload / 匿名 zipball）可能要过一阵才就绪，

@@ -8,7 +8,7 @@
 
 1.方法一 小白看这里：
 
-直接打开对话框发给你的AI agent：帮我安装链接里https://github.com/oneonew-gif/study-coach的skill
+直接打开对话框发给你的AI agent：帮我安装https://github.com/oneonew-gif/study-coach 链接里的skill
 
 （agent包括不限于豆包、workbuddy、codex、千问办公、DeepSeek harness、Claude等）
 

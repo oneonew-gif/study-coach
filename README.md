@@ -4,83 +4,17 @@
 
 本目录是**引擎**：方法论 + 脚本 + 模板。它不含任何人的课程数据 —— 装好后走一遍安装引导，会生成属于你自己的「资料库」。
 
-## 平台支持
+## 1️⃣ 如何安装
 
-| 平台 | 状态 | 说明 |
-|---|---|---|
-| macOS | ✅ 完整支持 | 主开发平台，全功能实测 |
-| Linux | ✅ 支持 | 与 macOS 同为 bash + python3 + node 生态（GitHub Actions CI 持续验证） |
-| Windows + Git Bash | 🔶 实验性 | 装 [Git for Windows](https://git-scm.com/download/win)（自带 bash）+ Python 3 + Node 18 即可；CI 在 windows-latest 持续验证，遇到问题欢迎提 issue |
-| Windows + WSL2 | 🔶 可用 | 在 WSL Ubuntu 里装 python3 + nodejs 后按 Linux 方式使用 |
-| Windows 原生（cmd/PowerShell） | ❌ 不支持 | 脚本依赖 bash，请用上面两条路径 |
-| iOS / Android | ❌ 不支持 | 需要能跑本地脚本的 agent 宿主，手机上没有 |
+1.方法一 小白看这里：
 
-> Windows 注意：**必须用 Git Bash 或 WSL** 打开终端跑脚本，不能用 PowerShell/cmd。Python 装成 `python` 也行，脚本会自动回退识别。
+直接打开对话框发给你的AI agent：帮我安装链接里https://github.com/oneonew-gif/study-coach的skill
+
+（agent包括不限于豆包、workbuddy、codex、千问办公、DeepSeek harness、Claude等）
 
 ---
 
-## 一键安装（macOS / Linux，推荐）
-
-不想看下面两节的话，打开终端粘贴这一行：
-
-```bash
-bash <(curl -sL https://raw.githubusercontent.com/oneonew-gif/study-coach/main/install.sh)
-```
-
-它会自动完成：下载引擎 → 放进 `~/.workbuddy/skills/study-coach/` → 跑环境预检 → 告诉你下一步对 AI 说什么。
-
-- **已有旧安装会自动备份**为 `study-coach.bak-时间戳`（你的资料库在别处，不受影响）；重跑同一命令 = 升级
-- **校验完整性**：发布时会在 CHANGELOG/本仓库贴出当版 `engine.zip` 的 SHA-256，加 `--sha256 <hash>` 校验可防镜像/中间人篡改（例：`bash <(curl -sL ...) --sha256 abc123...`）
-- 离线安装 / 指定目录 / 镜像候选等用法见 `install.sh` 头部注释（`--zip`、`--from-dir`、`--dir`）
-- Windows 用户用 Git Bash 或 WSL 直接跑本脚本即可，无需另找安装器
-
----
-
-## 一、装到哪
-
-解压后把整个 `study-coach/` 目录放进：
-
-```
-~/.workbuddy/skills/study-coach/
-```
-
-装完后目录结构应为：
-
-```
-~/.workbuddy/skills/study-coach/
-├── README.md          ← 本文件（给你看）
-├── INSTALL.md         ← 给 agent 看的安装指令（把包丢给 agent 说"帮我安装"即可）
-├── SKILL.md           ← 给 agent 读的引擎说明
-├── CHANGELOG.md       ← 版本历史
-├── scripts/           ← 全部可执行脚本
-├── references/        ← 笔记模板 / Canvas API 说明 / 出题规律模板
-└── templates/         ← 建库用的骨架模板
-```
-
-装完**先跑自检**（30–60 秒）：
-
-```bash
-bash ~/.workbuddy/skills/study-coach/scripts/preflight.sh   # 环境够不够
-bash ~/.workbuddy/skills/study-coach/scripts/selftest.sh    # 引擎自身可信吗
-```
-
-两个都全绿再往下。`preflight` 会把缺什么、怎么装讲清楚。
-
----
-
-## 二、环境要求（先看这个）
-
-| 需要 | 说明 |
-|---|---|
-| macOS 或 Linux | **原生 Windows 跑不了**（脚本是 bash 的）。装 WSL 后在 WSL 里用；Git Bash 部分可用但不保证 |
-| bash ≥ 3.2 | macOS / Linux 自带 |
-| python3 ≥ 3.8 | macOS 自带；Windows WSL 里 `sudo apt install python3` |
-| node ≥ 18 | 只影响抽题器；没有时其余功能照常 |
-| 能访问你们学校的 Canvas | 只在接 Canvas 时需要 |
-
----
-
-## 三、第一次怎么用
+## 2️⃣ 第一次怎么用
 
 装好后，对这个 agent 说：
 
@@ -90,19 +24,14 @@ Agent 会带你走这六步（细节都在 SKILL.md 里，你不用背）：
 
 | 步骤 | 谁动手 |
 |---|---|
-| ① 建资料库（问你放哪，建议 `~/WorkBuddy/study-library`） | agent 跑 `init_library.sh` |
+| ① 建资料库（问你放哪）
 | ①½ 问你有没有已整理的学习文件（课件/笔记/录音/题库）要导入 | 有 → 你指定文件夹，agent 只读扫描、给你确认清单后才复制（原件不动）；没有 → 跳过 |
 | ② 接 Canvas（可选，但强烈建议） | **你自己**去拿 token（见下） |
 | ③ 拉课程 → 生成课程索引 | agent |
 | ④ 问你这学期几门课、AI 政策 | **你回答**（API 拿不到，必须人告诉） |
 | ⑤ 验收（`canvas.sh doctor` 应打印你的名字） | agent |
 
-**安装引导会生成**：
-
-- `~/.workbuddy/study-coach.json` —— 配置指针（库在哪、Canvas 域名、当前学期）
-- `~/WorkBuddy/study-library/`（或你指定的路径）—— 你的资料库，以后所有笔记/题库/巡检快照都在这
-
-### 你要准备的四样东西
+### 3️⃣ 你要准备的四样东西
 
 1. **Canvas token**（可选，但接了才能自动巡检课件和截止日期）：
    - 浏览器登录你们学校的 Canvas
@@ -122,15 +51,7 @@ agent 会走「手动流派」：你自己从 Canvas 下载课件放进 `materia
 
 ---
 
-## 四、这东西的三条硬边界
-
-1. **Canvas 只读**：所有 Canvas 请求都走 `scripts/canvas.sh`，它只实现了 HTTP GET。**它无法提交作业、发帖、改成绩** —— 这是架构保证的，不是提示词承诺。有一个自检脚本会持续断言这件事（`selftest_canvas_readonly.sh`）。
-2. **禁 AI 课不代写**：课程政策禁止或不明时，产出会挂明确的横幅标明「本课禁止/疑似禁止 AI 代写」，**不给你可粘贴的正文**。每门课的政策存在你的库里，由你确认。
-3. **API 拿不到的信息必须问人**：AI 政策、评分权重细则、上课进度。agent 宁可标「待补充」也不编。
-
----
-
-## 五、日常怎么说
+## 4️⃣ 日常怎么说
 
 | 你说 | 它做什么 |
 |---|---|
@@ -149,9 +70,15 @@ agent 会走「手动流派」：你自己从 Canvas 下载课件放进 `materia
 
 **笔记跟着课程时间走**：课件提前传到 Canvas 不等于这节课上过。库里有个 `PROGRESS` 块记着每门课「上到第几讲」——上完新课要更新它，agent 才能分清「缺笔记」和「课还没上」。
 
+## 5️⃣ 这东西的三条硬边界
+
+1. **Canvas 只读**：所有 Canvas 请求都走 `scripts/canvas.sh`，它只实现了 HTTP GET。**它无法提交作业、发帖、改成绩** —— 这是架构保证的，不是提示词承诺。有一个自检脚本会持续断言这件事（`selftest_canvas_readonly.sh`）。
+2. **禁 AI 课不代写**：课程政策禁止或不明时，产出会挂明确的横幅标明「本课禁止/疑似禁止 AI 代写」，**不给你可粘贴的正文**。每门课的政策存在你的库里，由你确认。
+3. **API 拿不到的信息必须问人**：AI 政策、评分权重细则、上课进度。agent 宁可标「待补充」也不编。
+
 ---
 
-## 六、给对方的自检
+## 6️⃣ 自检
 
 这个包自带一套「验证工具本身」的机制，你可以不信任我们的说明，自己验：
 
@@ -182,7 +109,7 @@ bash ~/.workbuddy/skills/study-coach/scripts/selftest.sh
 
 ---
 
-## 七、常见问题
+## 7️⃣ 常见问题
 
 **Q：我学校不用 Canvas（用 Moodle / Blackboard）？**
 只能走「手动流派」，自动巡检不可用。其余（笔记/作业/抽题）完全正常 —— 它们只依赖你放进资料库的文件。这套脚本目前没写 Moodle 适配器。
@@ -207,9 +134,3 @@ cat ~/.workbuddy/skills/study-coach/CHANGELOG.md     # 看改过什么
 
 **Q：这个 skill 收集我的数据吗？**
 不。所有数据都在你自己的机器：配置 `~/.workbuddy/study-coach.json`、token `~/.workbuddy/.canvas-token`（600）、资料库你自己选的路径。脚本不联网上传任何东西（除 Canvas 只读 API）。
-
----
-
-## 八、版本
-
-看 `CHANGELOG.md`。当前版本以 `SKILL.md` 第 5 行 `version:` 为准。

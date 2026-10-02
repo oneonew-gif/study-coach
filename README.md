@@ -10,7 +10,7 @@
 
 直接打开对话框发给你的 AI agent：**帮我安装 https://github.com/oneonew-gif/study-coach 链接里的 skill**
 
-（前一版本Windows打开部署比较麻烦，现已就改。目前支持 macOS 、Linux 、Windows 10 / 11（支持（Git Bash） 装 Git for Windows、 Windows+WSL | 🔶 可用（在 WSL 的 Ubuntu 里按 Linux 方式安装使用）
+前一版本Windows打开部署比较麻烦，现已更改。目前支持 macOS 、Linux 、Windows 10 / 11（支持（Git Bash） 
 
 **能用的 AI agent**：要能在你电脑上读写文件、执行命令的桌面端 agent，例如 WorkBuddy、Claude 桌面版、Codex、Cursor、Trae 等。只能聊天、不能执行命令的网页版不行。
 

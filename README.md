@@ -1,4 +1,4 @@
-# study-coach · 通用 A+ 学习教练（前一版本Windows打开部署比较麻烦，现已就改。目前支持 macOS 、Linux 、Windows 10 / 11（支持（Git Bash） 装 Git for Windows、 Windows+WSL | 🔶 可用（在 WSL 的 Ubuntu 里按 Linux 方式安装使用）
+# study-coach · 通用 A+ 学习教练
 
 把课件、课堂录音变成复习笔记；辅导作业与论文；抽题刷题备考；定期巡检 Canvas 看课件与截止日期的变动。所有课程数据存你自己机器上，不经过任何第三方。
 
@@ -9,6 +9,8 @@
 ### 方法一 小白看这里：
 
 直接打开对话框发给你的 AI agent：**帮我安装 https://github.com/oneonew-gif/study-coach 链接里的 skill**
+
+（前一版本Windows打开部署比较麻烦，现已就改。目前支持 macOS 、Linux 、Windows 10 / 11（支持（Git Bash） 装 Git for Windows、 Windows+WSL | 🔶 可用（在 WSL 的 Ubuntu 里按 Linux 方式安装使用）
 
 **能用的 AI agent**：要能在你电脑上读写文件、执行命令的桌面端 agent，例如 WorkBuddy、Claude 桌面版、Codex、Cursor、Trae 等。只能聊天、不能执行命令的网页版不行。
 

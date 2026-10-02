@@ -120,7 +120,7 @@
 - **什么时候更新**：任何**课程结构类信息**变化之后 —— 截止日期变动、分值调整、AI 政策更新、增删课程。改完正文，顺手把 `syncedAt` 改成当下
 - **变动来自 Canvas 巡检时**：`source` 改 `canvas-snapshot`，`snapshot` 填那份快照的 `collectedAt`
 - **没接 Canvas 时**：`snapshot` 保持 `null` 即可，不会误报落后
-- **检查**：`python3 ~/.workbuddy/skills/study-coach/scripts/lib_doctor.py --only index-sync`
+- **检查**：`~/.workbuddy/skills/study-coach/bin/sc doctor --only index-sync`（Windows：`bin\sc.cmd doctor --only index-sync`）
 
 不更新的下场很具体：这份索引会变成**第二个过期倒计时** —— 界面还在、数字全是旧的，而所有会话都拿它当真相。
 
@@ -135,7 +135,7 @@
 
 - **什么时候更新**：每次上完新课，改 `taughtUpTo` 和 `asOf`
 - **`confirmed: false` 是什么意思**：这份进度是推断来的，还没跟你核对过。核对完改成 `true`
-- **检查**：`python3 ~/.workbuddy/skills/study-coach/scripts/lib_doctor.py --only coverage`
+- **检查**：`~/.workbuddy/skills/study-coach/bin/sc doctor --only coverage`
 
 ## 附三：学期标识（term）
 
@@ -149,5 +149,5 @@
 - 体检会核对三处 `term` 是否一致，不一致就报错
 - `scripts/archive_term.sh` 学期切换时把上一学期整体归档，而不是靠手工挪
 
-**学期结束时**：跑 `bash ~/.workbuddy/skills/study-coach/scripts/archive_term.sh`（默认只预演，看清清单再加 `--yes`）。它把当学期的 `notes/ materials/ transcripts/ recordings/ assignments/ plans/ inspection/` **移动**进 `archive/<term>/`；把 `quiz/`、`COURSES.md`、`course-rules.md` **复制**一份快照进归档（原地保留，因为题库与课程规律跨学期仍要用），然后重建空骨架。历史一份不删。
+**学期结束时**：跑 `~/.workbuddy/skills/study-coach/bin/sc archive`（默认只预演，看清清单再加 `--yes`）。它把当学期的 `notes/ materials/ transcripts/ recordings/ assignments/ plans/ inspection/` **移动**进 `archive/<term>/`；把 `quiz/`、`COURSES.md`、`course-rules.md` **复制**一份快照进归档（原地保留，因为题库与课程规律跨学期仍要用），然后重建空骨架。历史一份不删。
 

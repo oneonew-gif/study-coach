@@ -28,18 +28,10 @@
 
 set -euo pipefail
 
-# ---- Python 解析：python3 → python → py -3（Windows 兼容，W2）----
+# ---- 公共运行时：Python 选择（真跑验证）+ UTF-8 + Windows 路径规范化，见 _common.sh ----
 # 用法：$PY 调用时**不要加引号**（"py -3" 需要拆成两个词）
-if [ -z "${PY:-}" ]; then
-  if command -v python3 >/dev/null 2>&1; then
-    PY=python3
-  elif command -v python >/dev/null 2>&1 && python -c 'import sys; sys.exit(0 if sys.version_info[0]==3 else 1)' >/dev/null 2>&1; then
-    PY=python
-  elif command -v py >/dev/null 2>&1 && py -3 -c 'import sys' >/dev/null 2>&1; then
-    PY="py -3"
-  fi
-fi
-[ -n "$PY" ] || die "没找到 Python 3 —— 试过 python3 / python / py -3 三个名字都不在 PATH 里。"
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
+[ -n "$PY" ] || { printf 'ERROR: %s\n' "没找到 Python 3 —— 试过 python3 / python / py -3 三个名字都不在 PATH 里。" >&2; exit 1; }
 
 WORKBUDDY_HOME="${WORKBUDDY_HOME:-$HOME/.workbuddy}"
 CONFIG="$WORKBUDDY_HOME/study-coach.json"
@@ -148,7 +140,7 @@ parse_args "$@"
 load_config
 
 [ -n "${LIB}" ] || die "找不到库目录。用 --lib 指定，或先跑安装引导写 study-coach.json"
-LIB="${LIB/#\~/${HOME}}"
+LIB="$(sc_path "${LIB}")"
 [ -d "${LIB}" ] || die "库目录不存在：${LIB}"
 [ -f "${LIB}/COURSES.md" ] || die "这个目录里没有 COURSES.md，不像一个学习库：${LIB}"
 [ "${LIB}" != "${HOME}" ] || die "库目录不能是家目录本身"

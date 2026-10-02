@@ -23,6 +23,25 @@ import os
 import re
 import json
 
+# ---- 跨平台兜底（Windows）----
+# 中文 Windows 控制台默认 GBK：不重设的话打印 ✓ ✗ ⚠️ 直接 UnicodeEncodeError。
+# 经 bash 入口调用时 _common.sh 已设 PYTHONUTF8；这里兜住「agent 在 PowerShell 里直接 python xxx.py」的情况。
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def _win_path(s):
+    """Git Bash 写进配置的 /c/Users/... 在原生 Windows Python 里不是合法路径，转成 C:/Users/...。"""
+    s = str(s).strip()
+    if os.name == "nt":
+        m = re.match(r"^/([A-Za-z])(/.*)?$", s)
+        if m:
+            return f"{m.group(1).upper()}:{m.group(2) or '/'}"
+    return s
+
 BAN_MARK = "本课禁止 AI 代写"
 PARTIAL_MARK = "本课规定不可 AI 代写"
 UNCONFIRMED_MARK = "政策未确认"

@@ -41,12 +41,31 @@ import subprocess
 import sys
 from pathlib import Path
 
+# ---- 跨平台兜底（Windows）----
+# 中文 Windows 控制台默认 GBK：不重设的话打印 ✓ ✗ ⚠️ 直接 UnicodeEncodeError。
+# 经 bash 入口调用时 _common.sh 已设 PYTHONUTF8；这里兜住「agent 在 PowerShell 里直接 python xxx.py」的情况。
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def _win_path(s):
+    """Git Bash 写进配置的 /c/Users/... 在原生 Windows Python 里不是合法路径，转成 C:/Users/...。"""
+    s = str(s).strip()
+    if os.name == "nt":
+        m = re.match(r"^/([A-Za-z])(/.*)?$", s)
+        if m:
+            return f"{m.group(1).upper()}:{m.group(2) or '/'}"
+    return s
+
 SKILL_DIR = Path(__file__).resolve().parent.parent
 ENGINE_SCRIPTS = SKILL_DIR / "scripts"
 SELF = Path(__file__).resolve()
 
 # 配置/凭据路径默认在 ~/.workbuddy/，可通过 WORKBUDDY_HOME 环境变量覆盖（适配非 WorkBuddy 平台）
-WORKBUDDY_HOME = Path(os.environ.get("WORKBUDDY_HOME", str(Path.home() / ".workbuddy"))).expanduser()
+WORKBUDDY_HOME = Path(_win_path(os.environ.get("WORKBUDDY_HOME", str(Path.home() / ".workbuddy")))).expanduser()
 CONFIG = WORKBUDDY_HOME / "study-coach.json"
 TOKEN_FILE = WORKBUDDY_HOME / ".canvas-token"
 
@@ -72,6 +91,7 @@ SKELETON_DIRS = [
 # 一个只写注释提一嘴的脚本会被判定成验过了。这种自己骗自己的检查还不如没有。
 SELFTEST_COVERAGE = {
     "preflight.sh": "selftest.sh",
+    "_common.sh": "selftest_common.sh",
     "canvas.sh": "selftest_canvas_readonly.sh",
     "canvas_inspect.sh": "selftest_canvas_readonly.sh",
     "deadlines.sh": "selftest_deadlines.sh",
@@ -312,7 +332,7 @@ def load_config(explicit_lib=None):
         src = "study-coach.json"
     if not lib:
         return None, cfg, "未配置"
-    return Path(lib).expanduser(), cfg, src
+    return Path(_win_path(lib)).expanduser(), cfg, src
 
 
 def parse_courses_md(path: Path):
@@ -620,7 +640,10 @@ def check_engine_health(lib: Path, rep: Report, ctx):
 
     # ③ 可执行位：SKILL.md 让使用者直接 `$S run`，.sh 丢了 +x 就跑不起来
     noexec = [p.name for p in scripts
-              if p.suffix in {".sh", ".py", ".js"} and not os.access(p, os.X_OK)]
+              if p.suffix in {".sh", ".py", ".js"} and not p.name.startswith("_")
+              and not os.access(p, os.X_OK)]
+    if os.name == "nt":
+        noexec = []   # Windows 没有可执行位；入口统一走 bin/sc，不依赖 ./脚本
     if noexec:
         rep.warn("engine-health", f"这些脚本没有可执行位：{', '.join(noexec)}",
                  "chmod +x 它们。SKILL.md 里是让人直接 ./脚本 跑的")
@@ -998,7 +1021,16 @@ def check_credentials(lib: Path, rep: Report, ctx):
         rep.info("credentials", "无 token 文件（未接 Canvas 或走了手动流派）")
         return
     mode = TOKEN_FILE.stat().st_mode & 0o777
-    if mode != 0o600:
+    if os.name == "nt" or sys.platform == "cygwin" or os.environ.get("MSYSTEM"):
+        # NTFS 没有 Unix 权限位：chmod 600 是空操作，报 0o644 是必然的误报。
+        # Windows 上真正的风险是 token 被同步盘传上云。
+        low = str(TOKEN_FILE).lower()
+        if any(k in low for k in ("onedrive", "dropbox", "icloud", "google drive", "坚果云", "baidunetdisk")):
+            rep.warn("credentials", f"token 文件在同步盘目录里：{TOKEN_FILE}",
+                     "把 WORKBUDDY_HOME 改到不同步的本地目录，再把 token 挪过去")
+        else:
+            rep.ok("credentials", "Windows：不检查 Unix 权限位（NTFS 无此概念），token 不在常见同步盘目录")
+    elif mode != 0o600:
         rep.warn("credentials", f"token 文件权限是 {oct(mode)}，应为 0o600",
                  f"chmod 600 {TOKEN_FILE}")
     else:

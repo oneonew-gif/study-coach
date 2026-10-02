@@ -16,8 +16,8 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENGINE="$(cd "$HERE/.." && pwd)"          # 引擎根目录（install.sh 所在）
 INSTALL="$ENGINE/install.sh"
-PYBIN=""
-for c in python3 python; do command -v "$c" >/dev/null 2>&1 && { PYBIN="$c"; break; }; done
+. "$HERE/_common.sh"
+PYBIN="$PY"
 
 PASS=0; FAIL=0
 ok()  { PASS=$((PASS+1)); printf '  ✅ %s\n' "$1"; }
@@ -70,7 +70,7 @@ fi
 
 # ---------------------------------------------------------------- ③ --zip 安装（GitHub archive 形状）
 D3="$TMPBASE/dest3"
-"$PYBIN" - "$ENGINE" "$TMPBASE/engine-main.zip" <<'PYEOF' || bad "造测试 zip 失败"
+$PYBIN - "$ENGINE" "$TMPBASE/engine-main.zip" <<'PYEOF' || bad "造测试 zip 失败"
 import sys, zipfile, os
 src, out = sys.argv[1], sys.argv[2]
 top = 'study-coach-main'

@@ -29,16 +29,9 @@
 
 set -euo pipefail
 
-# ---- Python 解析：python3 → python → py -3（Windows 兼容，W2）----
-if [ -z "${PY:-}" ]; then
-  if command -v python3 >/dev/null 2>&1; then
-    PY=python3
-  elif command -v python >/dev/null 2>&1 && python -c 'import sys; sys.exit(0 if sys.version_info[0]==3 else 1)' >/dev/null 2>&1; then
-    PY=python
-  elif command -v py >/dev/null 2>&1 && py -3 -c 'import sys' >/dev/null 2>&1; then
-    PY="py -3"
-  fi
-fi
+# ---- 公共运行时：Python 选择（真跑验证）+ UTF-8 + Windows 路径规范化，见 _common.sh ----
+# 用法：$PY 调用时**不要加引号**（"py -3" 需要拆成两个词）
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_common.sh"
 [ -n "$PY" ] || { printf 'ERROR: 没找到 Python 3 —— 试过 python3 / python / py -3。\n' >&2; exit 1; }
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -86,6 +79,7 @@ PY
 fi
 
 # hint 在没库时也要能出（digest 兜底）；其他命令没库直接报错
+LIB="$(sc_path "${LIB}")"
 if [ "$CMD" != "hint" ]; then
   [ -n "${LIB}" ] || die "还没配置资料库路径。把 library 写进 ${CONFIG}，或用 --lib 指定。"
   [ -d "${LIB}" ] || die "资料库不存在：${LIB}"

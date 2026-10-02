@@ -110,16 +110,48 @@ else
   PRE_FAIL=1
 fi
 
+# Python 选择回归：所有脚本必须经 _common.sh 选 Python（真跑验证）。
+# 早先 15 个脚本各写一份「command -v python3 就用它」，会选中 Windows 商店的假 python3.exe。
+# 判定：出现「PY=python3」或「PY="python3"」这种不经验证的直接赋值即违规。
+BAREPY=""
+for f in "$HERE"/*.sh; do
+  [ -f "$f" ] || continue
+  case "$(basename "$f")" in _common.sh|selftest*.sh) continue ;; esac
+  if grep -qE '^[[:space:]]*(PY|PYBIN)="?python3?"?[[:space:]]*(;|$)' "$f" \
+     || grep -qE 'command -v python3[^|&]*&&[^|]*PY=' "$f"; then
+    BAREPY="${BAREPY}$(basename "$f") "
+  fi
+done
+if [ -z "$BAREPY" ]; then
+  echo "  ✅ Python 都经 _common.sh 真跑验证选出（不会选中 Windows 商店的假 python3）"
+else
+  echo "  ❌ 以下脚本绕过 _common.sh 直接认 python3（Windows 上会选中假货）：${BAREPY}"
+  PRE_FAIL=1
+fi
+
 # ---------------------------------------------------------------- 逐项跑
 TOTAL=0; PASS=0; FAILED=""
 START_ALL="$(date +%s)"
+
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*)
+    echo "  （Git Bash 起进程较慢，全部跑完可能要 5–10 分钟，每项都会显示进度，没卡住）" ;;
+esac
+IS_TTY=0; [ -t 1 ] && IS_TTY=1
 
 while IFS= read -r t; do
   [ -n "$t" ] || continue
   name="$(basename "$t" .sh)"; name="${name#selftest_}"
   TOTAL=$((TOTAL + 1))
   START="$(date +%s)"
+  # 进度：终端里先打「运行中」，跑完用结果行覆盖；非终端（日志/agent 捕获）直接逐行打
+  if [ "$IS_TTY" -eq 1 ]; then
+    printf '  ⏳ %-14s 运行中…\r' "$name"
+  else
+    printf '  … 正在跑 %s\n' "$name"
+  fi
   OUT="$(bash "$t" 2>&1)"; RC=$?
+  [ "$IS_TTY" -eq 1 ] && printf '\033[2K'
   COST=$(( $(date +%s) - START ))
 
   if [ "$RC" -eq 0 ]; then

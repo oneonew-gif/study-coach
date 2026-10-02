@@ -16,16 +16,9 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENGINE="$(cd "$HERE/.." && pwd)"
-# Python 解析：python3 → python → py -3（Windows 兼容，W2）
-PY=""
-if command -v python3 >/dev/null 2>&1; then
-  PY=python3
-elif command -v python >/dev/null 2>&1 && python -c 'import sys; sys.exit(0 if sys.version_info[0]==3 else 1)' >/dev/null 2>&1; then
-  PY=python
-elif command -v py >/dev/null 2>&1 && py -3 -c 'import sys' >/dev/null 2>&1; then
-  PY="py -3"
-fi
-[ -n $PY ] || { echo "错误：没找到 Python 3（试过 python3 / python / py -3）"; exit 1; }
+# 公共运行时（Python 真跑验证 + UTF-8 + Windows 路径），与被测脚本同一份
+. "$HERE/_common.sh"
+[ -n "$PY" ] || { echo "错误：没找到 Python 3（试过 python3 / python / py -3）"; exit 1; }
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

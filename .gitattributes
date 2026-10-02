@@ -1,0 +1,13 @@
+# 换行符钉死：Windows 上 git 的 core.autocrlf=true 会把 .sh 检出成 CRLF，
+# bash 读到 "set -u\r" 就报 "invalid option"，脚本一行都跑不起来。
+* text=auto eol=lf
+*.sh  text eol=lf
+*.py  text eol=lf
+*.js  text eol=lf
+*.md  text eol=lf
+*.json text eol=lf
+bin/sc text eol=lf
+# Windows 原生脚本必须是 CRLF，cmd 读 LF 的 .cmd 会有标签/跳转错乱
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf

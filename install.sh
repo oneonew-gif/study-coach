@@ -83,7 +83,11 @@ case "$UNAME" in
       say "① 平台：Linux ✅"
     fi ;;
   MINGW*|MSYS*|CYGWIN*)
-    say "① 平台：Windows Git Bash（实验性支持，脚本在此环境直接跑即可）" ;;
+    say "① 平台：Windows Git Bash ✅（Windows 官方路径）"
+    export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
+    case "$DEST" in
+      *[Oo]ne[Dd]rive*) say "   ⚠️ 安装位置在 OneDrive 同步目录里，同步锁文件会让脚本偶发失败；建议 --dir 换到本地目录" ;;
+    esac ;;
   *)
     die "不认识的平台：${UNAME}。macOS / Linux 直接跑本脚本；Windows 见 README 平台支持表。" ;;
 esac
@@ -165,12 +169,14 @@ else
   if command -v unzip >/dev/null 2>&1; then
     unzip -q "$WORK/engine.zip" -d "$WORK/unzip" || die "zip 解压失败——文件可能下载不完整"
   else
+    # 引擎还没装，用不了 _common.sh —— 这里就地真跑验证（防 Windows 商店假 python3.exe）
     PYBIN=""
-    for c in python3 python; do
-      command -v "$c" >/dev/null 2>&1 && { PYBIN="$c"; break; }
+    for c in python3 python "py -3"; do
+      command -v "${c%% *}" >/dev/null 2>&1 || continue
+      $c -c 'import sys; sys.exit(0 if sys.version_info[0] == 3 else 1)' >/dev/null 2>&1 && { PYBIN="$c"; break; }
     done
-    [ -n "$PYBIN" ] || die "没有 unzip 也没有 python，解压不了。装一个 unzip（brew install unzip / apt install unzip）后重跑"
-    "$PYBIN" - "$WORK/engine.zip" "$WORK/unzip" <<'PYEOF' || die "zip 解压失败——文件可能下载不完整"
+    [ -n "$PYBIN" ] || die "没有 unzip 也没有可用的 Python 3，解压不了。装一个 unzip（brew install unzip / apt install unzip）或 Python 3 后重跑"
+    $PYBIN - "$WORK/engine.zip" "$WORK/unzip" <<'PYEOF' || die "zip 解压失败——文件可能下载不完整"
 import sys, zipfile, os
 with zipfile.ZipFile(sys.argv[1]) as z:
     z.extractall(sys.argv[2])
@@ -220,7 +226,8 @@ say ""
 say "  用 study-coach 帮我学习，我还没装过，先走安装引导。"
 say ""
 say "Agent 会带你建资料库、接 Canvas（可选）、配置每日提醒。"
-say "Windows 用户注意：脚本要用 Git Bash 或 WSL 跑，不能用 PowerShell/cmd。"
+say "统一入口：$DEST/bin/sc <子命令>（Windows 的 cmd/PowerShell 里用 bin\\sc.cmd，会自动转给 Git Bash）"
+say "   例：$DEST/bin/sc doctor    $DEST/bin/sc help"
 say ""
 say "非 WorkBuddy 平台：请设置环境变量 WORKBUDDY_HOME 指向你的配置目录"
 say "（默认 ~/.workbuddy），否则脚本找不到 study-coach.json 和 Canvas token。"

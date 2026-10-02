@@ -13,6 +13,7 @@
 
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/_common.sh"
 
 pass=0; fail=0
 ok()  { printf '  ✅ %s\n' "$1"; pass=$((pass+1)); }
@@ -26,15 +27,15 @@ LIB="$(mktemp -d)"
 LIB2="$(mktemp -d)"
 trap 'rm -rf "$BIN" "$LIB" "$LIB2"' EXIT
 
-cp "$HERE/weekly_digest.sh" "$HERE/daily_digest.sh" "$HERE/deadlines.sh" "$HERE/vocab.sh" "$BIN/"
+cp "$HERE/_common.sh" "$HERE/weekly_digest.sh" "$HERE/daily_digest.sh" "$HERE/deadlines.sh" "$HERE/vocab.sh" "$BIN/"
 chmod +x "$BIN/weekly_digest.sh" "$BIN/daily_digest.sh" "$BIN/deadlines.sh"
 
 cat > "$BIN/canvas.sh" <<'FAKE'
 #!/bin/bash
-PY="$(command -v python3 || command -v python)"
+PY="${SC_PY_REAL:-python3}"
 case "${1:-}" in
-  courses) "$PY" -c "import json; print(json.dumps([{'id':1,'course_code':'DEMO101','name':'假课一'},{'id':2,'course_code':'DEMO102','name':'假课二'}]))" ;;
-  assignments) "$PY" -c "
+  courses) $PY -c "import json; print(json.dumps([{'id':1,'course_code':'DEMO101','name':'假课一'},{'id':2,'course_code':'DEMO102','name':'假课二'}]))" ;;
+  assignments) $PY -c "
 import json, datetime
 now = datetime.datetime.now(datetime.timezone.utc)
 d = lambda h: (now + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -107,7 +108,7 @@ else
   printf '%s\n' "$OUT" | sed 's/^/       /'
 fi
 
-STATS_N="$(python3 -c "import json;print(json.load(open('$LIB/digest/weekly-stats.json'))['reviewGaps'])" 2>/dev/null || echo ERR)"
+STATS_N="$($PY -c "import json;print(json.load(open('$LIB/digest/weekly-stats.json'))['reviewGaps'])" 2>/dev/null || echo ERR)"
 if [ "$STATS_N" = "2" ]; then
   ok "跑完快照刷新为本次值（reviewGaps=2）"
 else

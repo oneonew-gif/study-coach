@@ -2,7 +2,7 @@
 name: study-coach
 description: "通用 A+ 学习教练：把课件与课堂录音变成结构化复习笔记，辅导作业与论文，抽题刷题备考，背课程活词，并定期巡检 Canvas 课件与截止日期变动。首次使用引导接入 Canvas 只读 API 并建立个人课程资料库。触发：出笔记、帮我备考、考我、批改作业、巡检、背单词、库体检、学期归档、导出日历。完整触发词见正文各工作线。"
 agent_created: true
-version: 1.19.4
+version: 1.20.0
 ---
 
 # 通用 A+ 学习教练
@@ -13,13 +13,25 @@ version: 1.19.4
 
 ## 运行前提 · 先跑环境预检
 
-脚本是 **bash + python3 + node** 写的，只在 **macOS / Linux** 上验证过。
-**原生 Windows（cmd / PowerShell）跑不了** —— Windows 用户先装 WSL，在 WSL 里跑。
+脚本是 **bash + python3 + node** 写的，支持 **macOS / Linux / Windows**。
+**Windows 的官方路径是 Git Bash**（Git for Windows 自带），WSL 也可用。cmd / PowerShell 不能直接跑 `.sh`，但可以通过 `bin\sc.cmd` 调用，它会自己找到 Git Bash 转过去。
+
+**统一入口 `bin/sc`**：所有功能都能用 `<引擎>/bin/sc <子命令>` 调起，`sc help` 列全部。它负责挑出真能用的 Python（会跳过 Windows 商店的假 `python3.exe`），也负责 UTF-8 和 Windows 路径。本文后面写的 `scripts/<脚本名>` 用法在 macOS / Linux / Git Bash 里照样能跑，两种写法等价：
+
+| 本文写法 | 统一入口 | Windows cmd / PowerShell |
+|---|---|---|
+| `scripts/canvas.sh doctor` | `bin/sc canvas doctor` | `& "<引擎>\bin\sc.cmd" canvas doctor` |
+| `python3 scripts/lib_doctor.py` | `bin/sc doctor` | `& "<引擎>\bin\sc.cmd" doctor` |
+| `node scripts/draw_quiz.js …` | `bin/sc quiz …` | `& "<引擎>\bin\sc.cmd" quiz …` |
+
+（其余对照：`inspect` `deadlines` `daily` `weekly` `vocab` `archive` `init` `banner` `terms` `preflight` `selftest` `token`。）**在 Windows 上你（agent）的 shell 是 PowerShell 时，一律走 `sc.cmd`**，不要自己拼 `python3 …`。
 
 ```bash
-bash <引擎>/scripts/preflight.sh          # 完整报告 + 缺什么怎么装
+bash <引擎>/scripts/preflight.sh          # 完整报告 + 缺什么怎么装（= bin/sc preflight）
 bash <引擎>/scripts/preflight.sh --line   # 只出一行结论
 ```
+
+Windows 装依赖：`winget install Git.Git Python.Python.3.12 OpenJS.NodeJS.LTS`，或直接跑引擎根目录的 `install.ps1`。预检会额外提醒两类 Windows 风险：路径里有中文 / 空格（它会实测写读一次），以及资料库或配置放在 OneDrive / 网盘同步目录（同步锁会让脚本偶发失败，建议换到本地目录，如 `C:/study-library`）。
 
 | 依赖 | 最低版本 | 用途 | 缺了会怎样 |
 |---|---|---|---|
@@ -120,11 +132,24 @@ python3 ~/.workbuddy/skills/study-coach/scripts/lib_doctor.py --only term
 - 它存在 `~/.workbuddy/.canvas-token`（权限 600），**不在资料库里** —— 所以资料库可以随便备份和分享
 - ⚠️ 如果**看不到 `+ New Access Token` 这个选项**，说明你们学校禁用了个人 token。**这不是你做错了什么**，也不要卡在这里 —— 直接走下面的「手动流派」
 
-拿到 token 后写入（**用 `read -s`，别把 token 明文敲进命令行——那会进 shell 历史**），并问用户学校的 Canvas 网址（**只到域名，不要带 `/api/v1`**）：
+拿到 token 后**让用户自己在终端里**写入。输入不显示，**别把 token 明文敲进命令行，那会进 shell 历史**。同时问用户学校的 Canvas 网址（**只到域名，不要带 `/api/v1`**）：
 
 ```bash
+<引擎>/bin/sc token        # 推荐：所有平台通用。去掉首尾空白和 \r，不回显，权限 600
+# 等价的老写法（macOS / Linux / Git Bash）：
 read -s -p '粘贴 Canvas token，回车（输入不显示）：' t && printf '%s' "$t" > ~/.workbuddy/.canvas-token && unset t
 chmod 600 ~/.workbuddy/.canvas-token
+```
+
+Windows PowerShell（不经 Git Bash）的写法如下。NTFS 上 `chmod 600` 不起作用，保护靠的是用户目录本身的 ACL，体检时不会因此报错：
+
+```powershell
+& "<引擎>\bin\sc.cmd" token
+# 或纯 PowerShell：
+$s = Read-Host '粘贴 Canvas token（输入不显示）' -AsSecureString
+$t = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s))
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.workbuddy" | Out-Null
+[IO.File]::WriteAllText("$env:USERPROFILE\.workbuddy\.canvas-token", $t.Trim()); Remove-Variable t, s
 ```
 
 然后把 `baseUrl` 填进 `~/.workbuddy/study-coach.json`，参数格式与常见错误见 `references/canvas-api.md`。
@@ -793,7 +818,10 @@ python3 ~/.workbuddy/skills/study-coach/scripts/check_terms.py --lint       # �
 | 情况 | 怎么办 |
 |---|---|
 | 本机缺 python3 / node，或平台不是 macOS/Linux | 跑 `scripts/preflight.sh`，它会把缺什么、怎么装讲清楚。**装不了就如实说这套工具在这台机器上跑不了**，别硬凑 —— 半路失败比门口被拦难查得多 |
-| 原生 Windows（cmd / PowerShell） | 脚本是 bash 的，**跑不了**。装 WSL 后在 WSL 里跑；Git Bash 部分可用但不保证（路径与权限语义不同） |
+| Windows（cmd / PowerShell） | 不能直接跑 `.sh`。装 Git for Windows 后用 `<引擎>\bin\sc.cmd <子命令>`（它会自己找到 Git Bash），或在 Git Bash 里照 macOS 写法跑。`sc.cmd` 报「Git Bash not found」就是没装 Git，`winget install Git.Git` 后**重开终端** |
+| Windows 上 `python` 一跑就弹出微软商店 | 那是商店占位符，不是真 Python。引擎会自动跳过它；如果真 Python 也没装，预检会明确报出来。处理办法：装 python.org 的 Python，或在「设置 → 应用 → 应用执行别名」里关掉 python.exe / python3.exe |
+| Windows 自检很慢 | Git Bash 起进程慢，完整 `selftest` 可能要 5–10 分钟，每项都会打进度，没卡住 |
+| Windows 没有 rrule 自动化 | 用任务计划程序：`schtasks /Create /SC DAILY /ST 08:00 /TN "study-coach daily" /TR "\"<引擎>\bin\sc.cmd\" daily"`（时间用用户说的那个）。删除：`schtasks /Delete /TN "study-coach daily" /F` |
 | 术语表是空的 | `check_terms.py` 会明确报「无从校验」（退出码 3），**不会假装通过**。先逐课把术语登记进 `quiz/terms.json` |
 | 术语表没填任何 `avoid` | 检查器只剩拼写漂移可查，**查不出同义替换**（报告里会说明这个边界）。想拦住同义替换就得积累 `avoid` |
 | 没有 token / 学校禁用个人 token | 走「手动流派」，用户自己下载课件放 `materials/`，其余照常。**不要拒绝服务** |

@@ -25,15 +25,15 @@ LIB="$(mktemp -d)"
 LIB2="$(mktemp -d)"
 trap 'rm -rf "$BIN" "$LIB" "$LIB2"' EXIT
 
-cp "$HERE/daily_digest.sh" "$HERE/deadlines.sh" "$HERE/vocab.sh" "$BIN/"
+cp "$HERE/_common.sh" "$HERE/daily_digest.sh" "$HERE/deadlines.sh" "$HERE/vocab.sh" "$BIN/"
 chmod +x "$BIN/daily_digest.sh" "$BIN/deadlines.sh"
 
 cat > "$BIN/canvas.sh" <<'FAKE'
 #!/bin/bash
-PY="$(command -v python3 || command -v python)"
+PY="${SC_PY_REAL:-python3}"
 case "${1:-}" in
-  courses) "$PY" -c "import json; print(json.dumps([{'id':1,'course_code':'DEMO101','name':'假课一'}]))" ;;
-  assignments) "$PY" -c "
+  courses) $PY -c "import json; print(json.dumps([{'id':1,'course_code':'DEMO101','name':'假课一'}]))" ;;
+  assignments) $PY -c "
 import json, datetime
 now = datetime.datetime.now(datetime.timezone.utc)
 d = lambda h: (now + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')

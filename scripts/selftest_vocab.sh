@@ -13,6 +13,7 @@
 
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/_common.sh"
 
 pass=0; fail=0
 ok()  { printf '  ✅ %s\n' "$1"; pass=$((pass+1)); }
@@ -26,7 +27,7 @@ LIB="$(mktemp -d)"
 TMPHOME="$(mktemp -d)"
 trap 'rm -rf "$BIN" "$LIB" "$TMPHOME"' EXIT
 
-cp "$HERE/vocab.sh" "$BIN/"
+cp "$HERE/_common.sh" "$HERE/vocab.sh" "$BIN/"
 V="bash $BIN/vocab.sh --lib $LIB"
 
 # ---------------------------------------------------------------- ① 不编词
@@ -100,7 +101,7 @@ else
   bad "答错没回盒 1"
 fi
 $V grade --id 1 --hit >/dev/null
-BOX="$(python3 -c "import json;print(json.load(open('$LIB/vocab/vocab.json'))['words'][0]['box'])")"
+BOX="$($PY -c "import json;print(json.load(open('$LIB/vocab/vocab.json'))['words'][0]['box'])")"
 if [ "$BOX" = "2" ]; then
   ok "答对进下一盒（盒1 → 盒2）"
 else

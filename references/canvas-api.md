@@ -33,6 +33,8 @@
 ⚠️ **不要把 token 直接敲进命令行**——那会让它明文出现在 shell 历史里。用下面这条（输入不显示，写完回车）：
 
 ```bash
+~/.workbuddy/skills/study-coach/bin/sc token      # 推荐：所有平台通用（Windows：bin\sc.cmd token），不回显、去掉 \r
+# 或：
 read -s -p '粘贴 Canvas token，回车确认（输入不显示）：' t && printf '%s' "$t" > ~/.workbuddy/.canvas-token && unset t
 chmod 600 ~/.workbuddy/.canvas-token
 ```
@@ -62,7 +64,7 @@ chmod 600 ~/.workbuddy/.canvas-token
 ## 四、验收
 
 ```bash
-~/.workbuddy/skills/study-coach/scripts/canvas.sh doctor
+~/.workbuddy/skills/study-coach/bin/sc canvas doctor     # = scripts/canvas.sh doctor
 ```
 
 看到 `✓ 已连上：<你的名字>` 就是通了。

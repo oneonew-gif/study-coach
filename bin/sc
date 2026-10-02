@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# sc — study-coach 统一入口（macOS / Linux / Windows Git Bash）
+#
+# 为什么要有它：文档里原来是一长串 `bash ~/.workbuddy/skills/study-coach/scripts/xxx.sh`、
+# `python3 .../lib_doctor.py`、`node .../draw_quiz.js`。这在 Windows 上处处是坑：
+# PowerShell 不认 ~、没有 python3 这个名字、不能直接跑 .sh。
+# 现在只记一个入口：`<引擎>/bin/sc <子命令>`；Windows 的 cmd / PowerShell 用 `bin\sc.cmd`，
+# 它会找到 Git Bash 再转到这里。Python / 路径 / UTF-8 由 scripts/_common.sh 统一处理。
+#
+# 用法：sc <子命令> [参数…]       sc help 看全部
+
+set -u
+SC_BIN="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENGINE="$(cd "$SC_BIN/.." && pwd)"
+S="$ENGINE/scripts"
+
+# shellcheck source=../scripts/_common.sh
+. "$S/_common.sh"
+
+need_py() {
+  [ -n "$PY" ] && return 0
+  printf '✗ 没找到可用的 Python 3（≥3.8）。先跑 `sc preflight` 看怎么装。\n' >&2
+  exit 1
+}
+
+usage() {
+  cat <<'EOF'
+study-coach 统一入口
+
+用法：sc <子命令> [参数…]
+
+  Canvas（只读）
+    canvas <参数…>     Canvas API 只读查询（= scripts/canvas.sh）；sc canvas doctor 验连接
+    inspect <参数…>    课件巡检（= scripts/canvas_inspect.sh）
+    deadlines <参数…>  截止日期（= scripts/deadlines.sh）；sc deadlines ics 导出日历
+    token              安全写入 Canvas token（输入不显示、不进历史、不进资料库）
+
+  播报与复习
+    daily <参数…>      每日待办播报（= scripts/daily_digest.sh）
+    weekly <参数…>     每周复盘（= scripts/weekly_digest.sh）
+    vocab <参数…>      背单词（= scripts/vocab.sh）
+    quiz <参数…>       抽题（= node scripts/draw_quiz.js，需要 node ≥ 18）
+
+  资料库
+    init <参数…>       建资料库（= scripts/init_library.sh）
+    doctor <参数…>     库体检（= scripts/lib_doctor.py）
+    banner <参数…>     AI 政策横幅检查（= scripts/check_ai_banner.py）
+    terms <参数…>      术语表检查（= scripts/check_terms.py）
+    archive <参数…>    学期归档（= scripts/archive_term.sh）
+
+  引擎
+    preflight          环境预检
+    selftest [名字…]   引擎自检
+    path               打印引擎目录
+    help               本帮助
+EOF
+}
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+
+case "$cmd" in
+  canvas)    exec bash "$S/canvas.sh" "$@" ;;
+  inspect)   exec bash "$S/canvas_inspect.sh" "$@" ;;
+  deadlines) exec bash "$S/deadlines.sh" "$@" ;;
+  daily)     exec bash "$S/daily_digest.sh" "$@" ;;
+  weekly)    exec bash "$S/weekly_digest.sh" "$@" ;;
+  vocab)     exec bash "$S/vocab.sh" "$@" ;;
+  archive)   exec bash "$S/archive_term.sh" "$@" ;;
+  init)      exec bash "$S/init_library.sh" "$@" ;;
+  preflight) exec bash "$S/preflight.sh" "$@" ;;
+  selftest)  exec bash "$S/selftest.sh" "$@" ;;
+  doctor)    need_py; $PY "$S/lib_doctor.py" "$@"; exit $? ;;
+  banner)    need_py; $PY "$S/check_ai_banner.py" "$@"; exit $? ;;
+  terms)     need_py; $PY "$S/check_terms.py" "$@"; exit $? ;;
+  quiz)
+    command -v node >/dev/null 2>&1 || { printf '✗ 抽题需要 node ≥ 18，本机没找到 node。其余功能不受影响。\n' >&2; exit 1; }
+    exec node "$S/draw_quiz.js" "$@" ;;
+  token)
+    # token 只落在 $WORKBUDDY_HOME/.canvas-token，绝不回显、绝不进资料库
+    CFG="$(sc_path "${WORKBUDDY_HOME:-$HOME/.workbuddy}")"
+    mkdir -p "$CFG" || { printf '✗ 建不了配置目录：%s\n' "$CFG" >&2; exit 1; }
+    TOKEN_FILE="$CFG/.canvas-token"
+    if [ -t 0 ]; then
+      read -r -s -p '粘贴 Canvas token，回车（输入不显示）：' t; echo
+    else
+      IFS= read -r t || true   # 支持管道输入：别的程序把 token 喂进 stdin
+    fi
+    t="$(printf '%s' "${t:-}" | tr -d '\r\n[:space:]')"
+    [ -n "$t" ] || { unset t; printf '✗ 没收到 token，什么也没写。\n' >&2; exit 1; }
+    ( umask 077; printf '%s' "$t" > "$TOKEN_FILE" ) || { unset t; printf '✗ 写入失败：%s\n' "$TOKEN_FILE" >&2; exit 1; }
+    unset t
+    chmod 600 "$TOKEN_FILE" 2>/dev/null || true   # NTFS 上 chmod 无效，Windows 靠用户目录本身的 ACL
+    printf '✅ token 已写入 %s（未回显）。验证：sc canvas doctor\n' "$TOKEN_FILE"
+    ;;
+  path)      printf '%s\n' "$ENGINE" ;;
+  help|-h|--help) usage ;;
+  *)
+    printf '✗ 不认识的子命令：%s\n\n' "$cmd" >&2
+    usage >&2
+    exit 2 ;;
+esac

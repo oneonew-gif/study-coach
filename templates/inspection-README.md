@@ -1,6 +1,6 @@
 # Canvas 巡检
 
-这里是巡检的**产出目录**，全部由 `~/.workbuddy/skills/study-coach/scripts/canvas_inspect.sh` 生成。
+这里是巡检的**产出目录**，全部由 `~/.workbuddy/skills/study-coach/scripts/canvas_inspect.sh`（= `bin/sc inspect`） 生成。
 
 ```
 inspection/

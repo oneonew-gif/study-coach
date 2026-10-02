@@ -29,22 +29,22 @@ BIN="$(mktemp -d)"
 LIB="$(mktemp -d)"
 trap 'rm -rf "$BIN" "$LIB"' EXIT
 
-cp "$HERE/deadlines.sh" "$BIN/"
+cp "$HERE/_common.sh" "$HERE/deadlines.sh" "$BIN/"
 chmod +x "$BIN/deadlines.sh"
 
 # ---- 假 canvas.sh：3 门课，作业日期相对“现在”生成，永远新鲜 ----
 cat > "$BIN/canvas.sh" <<'FAKE'
 #!/bin/bash
-PY="$(command -v python3 || command -v python)"
+PY="${SC_PY_REAL:-python3}"
 case "${1:-}" in
   courses)
-    "$PY" -c "import json; print(json.dumps([
+    $PY -c "import json; print(json.dumps([
       {'id':1,'course_code':'DEMO101','name':'假课一'},
       {'id':2,'course_code':'DEMO102','name':'假课二'},
       {'id':3,'course_code':'DEMO103','name':'坏课'}]))" ;;
   assignments)
     case "$2" in
-      1) "$PY" -c "
+      1) $PY -c "
 import json, datetime
 now = datetime.datetime.now(datetime.timezone.utc)
 d = lambda h: (now + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -53,7 +53,7 @@ print(json.dumps([
   {'id':12,'name':'Quiz 1','due_at':d(-48),'points_possible':10,'html_url':'http://x/12','submission':{'workflow_state':'unsubmitted'}},
   {'id':13,'name':'Reading submitted','due_at':d(120),'submission':{'workflow_state':'submitted'}},
   {'id':14,'name':'No-due task','due_at':None,'submission':{}}]))" ;;
-      2) "$PY" -c "
+      2) $PY -c "
 import json, datetime
 now = datetime.datetime.now(datetime.timezone.utc)
 d = lambda h: (now + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -196,15 +196,15 @@ fi
 # 段 B：全好 canvas（无坏课），多带一条逾期超 30 天的旧账测 --include-late
 cat > "$BIN/canvas.sh" <<'FAKE3'
 #!/bin/bash
-PY="$(command -v python3 || command -v python)"
+PY="${SC_PY_REAL:-python3}"
 case "${1:-}" in
   courses)
-    "$PY" -c "import json; print(json.dumps([
+    $PY -c "import json; print(json.dumps([
       {'id':1,'course_code':'DEMO101','name':'假课一'},
       {'id':2,'course_code':'DEMO102','name':'假课二'}]))" ;;
   assignments)
     case "$2" in
-      1) "$PY" -c "
+      1) $PY -c "
 import json, datetime
 now = datetime.datetime.now(datetime.timezone.utc)
 d = lambda h: (now + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -213,7 +213,7 @@ print(json.dumps([
   {'id':12,'name':'Quiz 1','due_at':d(-48),'points_possible':10,'html_url':'http://x/12','submission':{'workflow_state':'unsubmitted'}},
   {'id':13,'name':'Reading submitted','due_at':d(120),'submission':{'workflow_state':'submitted'}},
   {'id':14,'name':'No-due task','due_at':None,'submission':{}}]))" ;;
-      2) "$PY" -c "
+      2) $PY -c "
 import json, datetime
 now = datetime.datetime.now(datetime.timezone.utc)
 d = lambda h: (now + datetime.timedelta(hours=h)).strftime('%Y-%m-%dT%H:%M:%SZ')

@@ -13,6 +13,32 @@
 
 ---
 
+## 1.20.0 — 2026-10-02 · Windows 正式支持（Git Bash 为官方路径）
+
+Windows 原来是「实验性」，实际用起来到处是坑。本版把 Git Bash 定为 Windows 官方路径，把已知的坑逐个填上。macOS / Linux 用户行为不变。
+
+### 新增
+- **`scripts/_common.sh` 公共运行时**：原来 15 个脚本各复制了一份 Python 检测，而且都只用 `command -v` 判断，会选中 Windows 商店的假 `python3.exe`。现在合并成一份，对每个候选（`python3` → `python` → `py -3`）都真跑一次，验证版本 ≥ 3.8。同时它还负责：导出 `PYTHONUTF8` / `PYTHONIOENCODING`，避免中文 Windows 控制台用 GBK 编码导致输出 ✓ ⚠️ 时崩溃；在 MSYS 下把 `HOME`、`TMPDIR`、`WORKBUDDY_HOME` 规范成 `C:/...` 格式；去掉原生 Windows Python 输出里的 `\r`（否则 `$(…)` 拿到的路径永远「不存在」）；设 `MSYS_NO_PATHCONV=1`，防止 Git Bash 把 `/courses/123` 这类参数改写成 Windows 路径。
+- **统一入口 `bin/sc` + `bin/sc.cmd`**：所有功能都可以用 `sc <子命令>` 调起。`sc.cmd` 给 cmd / PowerShell 用，会自动找 Git Bash（Program Files、LocalAppData，或从 `where git` 反推），并且不会误用 System32 下的 WSL bash。
+- **`sc token`**：所有平台通用的安全写 token 方式：不回显，去掉 `\r` 和空白，权限 600，空输入不写文件。
+- **`install.ps1`**：Windows 一键安装。用 winget 补齐 Git / Python / Node，再通过 Git Bash 跑 `install.sh`。文件内容纯 ASCII，防止 PowerShell 5.1 显示乱码。
+- **`.gitattributes`**：把 `.sh`、`.py`、`.js` 固定为 LF，`.cmd`、`.ps1` 固定为 CRLF，防止 autocrlf 把脚本改坏（`set -u\r`）。
+- **`selftest_common.sh`**：在 macOS / Linux 上注入 Windows 场景做自检（16 项）：假 python3、全是假货、C locale 打印、CRLF 去除且退出码透传、cygpath 规范化、中文 + 空格路径、`sc` 分发和 token 写入、换行符、ps1 纯 ASCII。已登记进 `SELFTEST_COVERAGE`。
+
+### 改动
+- `preflight.sh`：Git Bash 改为 ✅ 官方路径。Python 检测改用 `_common.sh`，能区分「有假货」和「真没装」两种情况，并给出相应修法。新增路径风险检查：路径含中文或空格时给提示，并实测写读一个中文文件名；配置目录或资料库在 OneDrive / Dropbox / iCloud / 坚果云等同步目录时给警告。Windows 的装法改为 winget。
+- `selftest.sh`：每一项先显示进度（终端里原地刷新，非终端逐行输出），Git Bash 下提示 5–10 分钟属正常。新增回归检查：脚本绕过 `_common.sh`、直接认 `python3` 就报 ❌。
+- `lib_doctor.py`：Windows（NTFS）上不再因为 token 文件不是 600 而误报。token 放在网盘同步目录时给警告。`_` 开头的被 source 文件不再要求有可执行位。三个 Python 检查器统一重设 stdout 为 UTF-8，并能识别 `/c/...` 形式的路径。
+- `install.sh`：Git Bash 改为 ✅。安装位置在 OneDrive 里时给提醒。解压回退时找 Python 也改为真跑验证。收尾提示改为 `bin/sc`。
+- `package_skill.sh`：隐私扫描范围加入 `.ps1`、`.cmd` 和 `bin/sc`。
+- 文档：SKILL.md 运行前提部分改写（加了 sc 对照表和 PowerShell 的 token 写法；兜底表补了商店假 python、自检慢、schtasks 定时这几种情况）。README 平台表里 Windows 改为 ✅，并新增 Windows 一键安装一节。INSTALL.md、模板和 references 里的命令都改为 `bin/sc`。README 常见问题里「python 太旧」一条改成预检的新报错原文，补上 Windows 装法和商店占位符的处理；「收集数据吗」一条补上 Windows 的 token 保护方式和安装器只下载不上传的说明。
+
+### 已知边界
+- 本版的 Windows 行为是在 macOS / Linux 上**模拟验证**的（假 python、CRLF、cygpath、中文路径）。还没在真机 Windows 上跑过完整自检，建议发布前在一台 Windows 上跑一遍 `install.ps1` 和 `sc selftest`。
+- 手机端和网页版 AI 仍然不支持（没有本地 shell）。
+
+---
+
 ## 1.19.4 — 2026-10-01 · 遗留问题收口（N1–N10）
 
 第二轮复查发现的 10 个待完善点全部落地。对 WorkBuddy 主路径用户零影响（默认行为不变），对非 WorkBuddy 平台用户是把半吊子的支持补完整。

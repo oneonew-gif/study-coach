@@ -55,7 +55,26 @@ import re
 import sys
 from pathlib import Path
 
-DEFAULT_CONFIG = Path(os.environ.get("WORKBUDDY_HOME", str(Path.home() / ".workbuddy"))).expanduser() / "study-coach.json"
+# ---- 跨平台兜底（Windows）----
+# 中文 Windows 控制台默认 GBK：不重设的话打印 ✓ ✗ ⚠️ 直接 UnicodeEncodeError。
+# 经 bash 入口调用时 _common.sh 已设 PYTHONUTF8；这里兜住「agent 在 PowerShell 里直接 python xxx.py」的情况。
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def _win_path(s):
+    """Git Bash 写进配置的 /c/Users/... 在原生 Windows Python 里不是合法路径，转成 C:/Users/...。"""
+    s = str(s).strip()
+    if os.name == "nt":
+        m = re.match(r"^/([A-Za-z])(/.*)?$", s)
+        if m:
+            return f"{m.group(1).upper()}:{m.group(2) or '/'}"
+    return s
+
+DEFAULT_CONFIG = Path(_win_path(os.environ.get("WORKBUDDY_HOME", str(Path.home() / ".workbuddy")))).expanduser() / "study-coach.json"
 
 # 近似匹配的下限。太短的词做编辑距离会被误报淹没（如 norms / forms / norns）。
 FUZZY_MIN_LEN = 6          # 6~7 字符只认距离 1；≥8 字符认距离 2
@@ -85,7 +104,7 @@ def load_library(explicit=None):
             return None, f"{DEFAULT_CONFIG} 不是合法 JSON：{e}"
         lib = (cfg.get("library") or "").strip()
         if lib:
-            p = Path(lib).expanduser()
+            p = Path(_win_path(lib)).expanduser()
             return (p, str(DEFAULT_CONFIG)) if p.is_dir() else (None, f"配置里的库目录不存在：{p}")
     return None, f"找不到库目录（配置 {DEFAULT_CONFIG} 缺失，也没给 --library）"
 

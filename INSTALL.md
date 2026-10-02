@@ -21,16 +21,16 @@
 
 ## 1. 确认环境（30 秒）
 
-**必须在 bash 里跑本流程**：macOS/Linux 自带；Windows 用 Git Bash（Git for Windows 自带）或 WSL，**不能用 PowerShell / cmd**。
+macOS / Linux 直接在 bash 里跑。**Windows 的官方路径是 Git Bash**：你的 shell 是 PowerShell 也没关系，装好后一律用 `<引擎>\bin\sc.cmd <子命令>`，它会找到 Git Bash 转过去。不要自己拼 `bash xxx.sh` 或 `python3 xxx.py`。
 
 | 要求 | 不满足时 |
 |---|---|
-| macOS / Linux / Windows(Git Bash 或 WSL) | 原生 Windows（cmd/PowerShell）不支持，先装 Git for Windows 或 WSL |
+| macOS / Linux / Windows（装了 Git for Windows） | Windows 没装 Git：在 PowerShell 跑 `install.ps1`，它会用 winget 代装 Git / Python / Node |
 | bash ≥ 3.2 | macOS/Linux/Git Bash 自带，一般无需处理 |
-| Python 3.8+（`python3`、`python` 或 `py -3` 任一） | 缺了**全部功能停摆**；Windows 去 python.org 装，装完重开终端 |
+| Python 3.8+（`python3`、`python` 或 `py -3` 任一） | 缺了**全部功能停摆**。Windows：`winget install Python.Python.3.12`，装完**重开终端** |
 | node ≥ 18 | 只影响抽题器；没有就告知"抽题不可用，其余照常" |
 
-> Windows 提示：脚本会自动识别 `python` / `py -3` 等名字，无需改名。Git Bash 路径为实验性支持（CI 持续验证），遇到问题可换 WSL。
+> Windows 提示：脚本对每个 Python 候选都真跑一次验证，会跳过商店的假 `python3.exe`。中文用户名和带空格的路径都支持。资料库**别放 OneDrive 同步目录**，预检会提醒。Git Bash 下自检较慢（5–10 分钟），属正常。
 
 ---
 
@@ -45,11 +45,17 @@
 4. 依次跑两个检查，**任何输出含 ❌ 就停下如实报告，不要带病交付**：
 
 ```bash
-bash ~/.workbuddy/skills/study-coach/scripts/preflight.sh   # 环境预检
-bash ~/.workbuddy/skills/study-coach/scripts/selftest.sh    # 引擎自检（自动发现全部 selftest_*.sh，1–2 分钟）
+~/.workbuddy/skills/study-coach/bin/sc preflight   # 环境预检
+~/.workbuddy/skills/study-coach/bin/sc selftest    # 引擎自检（自动发现全部 selftest_*.sh，1–2 分钟；Git Bash 下 5–10 分钟）
 ```
 
-（若你所在平台 skills 目录不同，把路径换成实际安装路径。）
+```powershell
+# Windows PowerShell / cmd
+& "$env:USERPROFILE\.workbuddy\skills\study-coach\bin\sc.cmd" preflight
+& "$env:USERPROFILE\.workbuddy\skills\study-coach\bin\sc.cmd" selftest
+```
+
+（若你所在平台 skills 目录不同，把路径换成实际安装路径。Windows 上一步到位：`powershell -ExecutionPolicy Bypass -File install.ps1 -Zip <zip路径>`。）
 
 ---
 

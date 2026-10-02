@@ -128,7 +128,7 @@ while IFS= read -r -d '' f; do
     sed 's/^/       /' /tmp/pkg-scan-out.$$ >&2
     HITS_TOTAL=$((HITS_TOTAL + HITS))
   fi
-done < <(find "${SKILL_DIR}" -type f \( -name "*.md" -o -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.tsv" -o -name "*.json" \) -print0)
+done < <(find "${SKILL_DIR}" -type f \( -name "*.md" -o -name "*.sh" -o -name "*.py" -o -name "*.js" -o -name "*.tsv" -o -name "*.json" -o -name "*.ps1" -o -name "*.cmd" -o -path "*/bin/sc" \) -print0)
 rm -f /tmp/pkg-scan-out.$$
 if [ "${HITS_TOTAL}" -eq 0 ]; then
   ok "源目录隐私零命中"

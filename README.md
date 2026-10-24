@@ -12,7 +12,7 @@
 
 前一版本Windows打开部署比较麻烦，现已更改。目前支持 macOS 、Linux 、Windows 10 / 11（支持（Git Bash） 
 
-**能用的 AI agent**：要能在你电脑上读写文件、执行命令的桌面端 agent，例如 WorkBuddy、Claude 桌面版、Codex、Cursor、Trae 等。只能聊天、不能执行命令的网页版不行。
+**能用的 AI agent**：要能在你电脑上读写文件、执行命令的桌面端 agent，例如 WorkBuddy、豆包、Claude 桌面版、Codex、Cursor、Trae 等。只能聊天、不能执行命令的网页版不行。
 
 ## 2️⃣ 第一次怎么用
 
